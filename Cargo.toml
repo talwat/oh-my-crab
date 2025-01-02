@@ -1,0 +1,9 @@
+[package]
+name = "oh-my-crab"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+clap = { version = "4.5.23", features = ["derive"] }
+dirs = "5.0.1"
+owo-colors = "4.1.0"
