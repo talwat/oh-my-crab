@@ -71,10 +71,13 @@ fn main() {
 
     let mut parts = Vec::with_capacity(8);
 
-    if env::var("OMCRAB_PLUGINS").is_ok_and(|x| {
+    if env::var("OMCRAB_SHOW_HOST").is_ok_and(|x| {
         let x = x.trim().to_lowercase();
         x == "1" || x == "true"
     }) {
+        // Fix for MacOS.
+        let hostname = hostname.trim_end_matches(".local");
+
         parts.push(Part::single(
             Color::White,
             format!("({}@{})", user, hostname),
