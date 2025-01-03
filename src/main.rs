@@ -1,7 +1,7 @@
 mod plugins;
 mod prompt;
 
-use std::{path::Path, process::Command};
+use std::{env, path::Path, process::Command};
 
 use clap::{arg, Parser, Subcommand};
 use owo_colors::AnsiColors as Color;
@@ -69,19 +69,39 @@ fn main() {
         exit_code,
     } = cli.command;
 
-    let mut parts = vec![
-        Part::single(
-            if exit_code == 0 {
-                Color::BrightGreen
-            } else {
-                Color::BrightRed
-            },
-            "➜ ",
-        ),
-        Part::single(Color::BrightCyan, working_dir(pwd).unwrap()),
-    ];
+    let mut parts = Vec::with_capacity(8);
 
-    parts.push(Part::Plugin(git));
+    if env::var("OMCRAB_PLUGINS").is_ok_and(|x| {
+        let x = x.trim().to_lowercase();
+        x == "1" || x == "true"
+    }) {
+        parts.push(Part::single(
+            Color::White,
+            format!("({}@{})", user, hostname),
+        ));
+    }
+
+    parts.push(Part::single(
+        if exit_code == 0 {
+            Color::BrightGreen
+        } else {
+            Color::BrightRed
+        },
+        "➜ ",
+    ));
+
+    parts.push(Part::single(Color::BrightCyan, working_dir(pwd).unwrap()));
+
+    if let Ok(plugins) = env::var("OMCRAB_PLUGINS") {
+        for plugin in plugins.trim().to_lowercase().split(" ") {
+            match plugin {
+                "git" => parts.push(Part::Plugin(git)),
+                _ => (),
+            }
+        }
+    } else {
+        parts.push(Part::Plugin(git));
+    }
 
     if is_dirty() {
         parts.push(Part::single(Color::BrightYellow, "✗"));
