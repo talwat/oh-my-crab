@@ -24,20 +24,20 @@ impl Segment {
 }
 
 pub enum Part {
-    Plugin(fn() -> plugins::Output),
+    Plugin(fn() -> Option<plugins::Output>),
     Simple(Vec<Segment>),
 }
 
 impl Part {
-    fn evaluate(self) -> Vec<Segment> {
+    fn evaluate(self) -> Option<Vec<Segment>> {
         let mut segments = match self {
-            Self::Plugin(x) => x().evaluate(),
+            Self::Plugin(x) => x()?.evaluate(),
             Self::Simple(segment) => segment,
         };
 
         segments.push(Segment::spacer());
 
-        segments
+        Some(segments)
     }
 
     pub fn single(color: AnsiColors, text: impl ToString) -> Self {
@@ -51,7 +51,12 @@ pub struct ShellPrompt {
 
 impl ShellPrompt {
     pub fn print(self) {
-        let segments: Vec<Segment> = self.parts.into_iter().flat_map(|x| x.evaluate()).collect();
+        let segments: Vec<Segment> = self
+            .parts
+            .into_iter()
+            .filter_map(|x| x.evaluate())
+            .flatten()
+            .collect();
 
         let output: String = segments
             .into_iter()

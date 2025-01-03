@@ -1,3 +1,5 @@
+use std::process::Command;
+
 use owo_colors::AnsiColors;
 
 use crate::prompt::Segment;
@@ -15,4 +17,24 @@ impl Output {
             Segment::new(self.label.1, ")"),
         ]
     }
+}
+
+pub fn git() -> Option<Output> {
+    let output = Command::new("git")
+        .arg("branch")
+        .arg("--show-current")
+        .output()
+        .ok()?;
+
+    if !output.status.success() || output.stdout.is_empty() {
+        return None;
+    }
+
+    return Some(Output {
+        value: (
+            String::from_utf8(output.stdout).ok()?.trim().to_string(),
+            AnsiColors::BrightRed,
+        ),
+        label: (String::from("git"), AnsiColors::Blue),
+    });
 }

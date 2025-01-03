@@ -1,13 +1,11 @@
 mod plugins;
 mod prompt;
 
-use std::{
-    env::home_dir,
-    path::{Path, PathBuf},
-};
+use std::{path::Path, process::Command};
 
 use clap::{arg, Parser, Subcommand};
 use owo_colors::AnsiColors as Color;
+use plugins::git;
 use prompt::{Part, ShellPrompt};
 
 #[derive(Parser)]
@@ -48,6 +46,18 @@ fn working_dir(pwd: String) -> Option<String> {
     });
 }
 
+fn is_dirty() -> bool {
+    let Ok(output) = Command::new("git")
+        .arg("status")
+        .arg("--porcelain")
+        .output()
+    else {
+        return false;
+    };
+
+    return output.status.success() && !output.stdout.is_empty();
+}
+
 fn main() {
     let cli = Cli::parse();
 
@@ -59,10 +69,23 @@ fn main() {
         exit_code,
     } = cli.command;
 
-    let parts = vec![
-        Part::single(Color::Red, "➜ "),
-        Part::single(Color::Cyan, working_dir(pwd).unwrap()),
+    let mut parts = vec![
+        Part::single(
+            if exit_code == 0 {
+                Color::BrightGreen
+            } else {
+                Color::BrightRed
+            },
+            "➜ ",
+        ),
+        Part::single(Color::BrightCyan, working_dir(pwd).unwrap()),
     ];
+
+    parts.push(Part::Plugin(git));
+
+    if is_dirty() {
+        parts.push(Part::single(Color::BrightYellow, "✗"));
+    }
 
     let prompt = ShellPrompt::new(parts);
 
