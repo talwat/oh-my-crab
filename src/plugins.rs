@@ -1,12 +1,10 @@
 use std::process::Command;
 
-use owo_colors::AnsiColors;
-
-use crate::prompt::Segment;
+use crate::{color::Color, prompt::Segment};
 
 pub struct Output {
-    label: (String, AnsiColors),
-    value: (String, AnsiColors),
+    label: (String, Color),
+    value: (String, Color),
 }
 
 impl Output {
@@ -33,8 +31,8 @@ pub fn git() -> Option<Output> {
     return Some(Output {
         value: (
             String::from_utf8(output.stdout).ok()?.trim().to_string(),
-            AnsiColors::BrightRed,
+            Color::Red,
         ),
-        label: (String::from("git"), AnsiColors::Blue),
+        label: (String::from("git"), Color::Blue),
     });
 }

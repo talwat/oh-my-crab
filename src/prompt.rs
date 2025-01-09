@@ -1,24 +1,35 @@
-use owo_colors::{AnsiColors, OwoColorize};
-
-use crate::plugins;
+use crate::{color::Color, plugins};
 
 pub struct Segment {
-    color: AnsiColors,
+    color: Color,
     text: String,
 }
 
 impl Segment {
     fn spacer() -> Self {
         Self {
-            color: AnsiColors::Default,
+            color: Color::Reset,
             text: " ".to_string(),
         }
     }
 
-    pub fn new(color: AnsiColors, text: impl ToString) -> Self {
+    pub fn new(color: Color, text: impl ToString) -> Self {
         Self {
             color,
             text: text.to_string(),
+        }
+    }
+
+    pub fn printable(&self, shell: &str) -> String {
+        if self.text.trim().is_empty() {
+            String::from(" ")
+        } else {
+            format!(
+                "{}{}{}",
+                self.color.shell_aware_ansi(shell),
+                self.text,
+                Color::Reset.shell_aware_ansi(shell)
+            )
         }
     }
 }
@@ -40,7 +51,7 @@ impl Part {
         Some(segments)
     }
 
-    pub fn single(color: AnsiColors, text: impl ToString) -> Self {
+    pub fn single(color: Color, text: impl ToString) -> Self {
         Self::Simple(vec![Segment::new(color, text)])
     }
 }
@@ -50,7 +61,7 @@ pub struct ShellPrompt {
 }
 
 impl ShellPrompt {
-    pub fn print(self) {
+    pub fn print(self, shell: &str) {
         let segments: Vec<Segment> = self
             .parts
             .into_iter()
@@ -58,12 +69,9 @@ impl ShellPrompt {
             .flatten()
             .collect();
 
-        let output: String = segments
-            .into_iter()
-            .map(|x| x.text.color(x.color).to_string())
-            .collect();
+        let output: String = segments.into_iter().map(|x| x.printable(shell)).collect();
 
-        print!("{output}\n")
+        print!("{output}")
     }
 
     pub fn new(parts: Vec<Part>) -> Self {

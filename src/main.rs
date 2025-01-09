@@ -1,12 +1,19 @@
+mod color;
 mod plugins;
 mod prompt;
 
+use color::Color;
+use phf::phf_map;
 use std::{env, path::Path, process::Command};
 
 use clap::{arg, Parser, Subcommand};
-use owo_colors::AnsiColors as Color;
 use plugins::git;
 use prompt::{Part, ShellPrompt};
+
+/// Defines a list of available plugins
+const PLUGINS: phf::Map<&str, fn() -> Option<plugins::Output>> = phf_map! {
+    "git" => git,
+};
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -86,31 +93,32 @@ fn main() {
 
     parts.push(Part::single(
         if exit_code == 0 {
-            Color::BrightGreen
+            Color::Green
         } else {
-            Color::BrightRed
+            Color::Red
         },
         "➜ ",
     ));
 
-    parts.push(Part::single(Color::BrightCyan, working_dir(pwd).unwrap()));
+    parts.push(Part::single(Color::Cyan, working_dir(pwd).unwrap()));
 
     if let Ok(plugins) = env::var("OMCRAB_PLUGINS") {
         for plugin in plugins.trim().to_lowercase().split(" ") {
-            match plugin {
-                "git" => parts.push(Part::Plugin(git)),
-                _ => (),
-            }
+            let Some(plugin) = PLUGINS.get(plugin) else {
+                continue;
+            };
+
+            parts.push(Part::Plugin(*plugin));
         }
     } else {
         parts.push(Part::Plugin(git));
     }
 
     if is_dirty() {
-        parts.push(Part::single(Color::BrightYellow, "✗"));
+        parts.push(Part::single(Color::Yellow, "✗"));
     }
 
     let prompt = ShellPrompt::new(parts);
 
-    prompt.print();
+    prompt.print(&shell);
 }
