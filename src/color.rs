@@ -30,7 +30,7 @@ pub enum Color {
 }
 
 impl Color {
-    pub fn ansi(&self) -> &'static str {
+    pub const fn ansi(&self) -> &'static str {
         match self {
             Color::Reset => "\x1B[0m",
             Color::Bold => "\x1B[1m",
