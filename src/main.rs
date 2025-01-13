@@ -3,17 +3,11 @@ mod plugins;
 mod prompt;
 
 use color::Color;
-use phf::phf_map;
 use std::{env, path::Path, process::Command};
 
 use clap::{arg, Parser, Subcommand};
-use plugins::git;
+use plugins::{git, PLUGINS};
 use prompt::{Part, ShellPrompt};
-
-/// Defines a list of available plugins
-const PLUGINS: phf::Map<&str, fn() -> Option<plugins::Output>> = phf_map! {
-    "git" => git,
-};
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
