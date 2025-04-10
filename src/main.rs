@@ -41,7 +41,11 @@ fn working_dir(pwd: String) -> Option<String> {
     let home = home.to_str()?;
 
     return Some(if pwd != home {
-        Path::new(&pwd).file_name()?.to_str()?.to_string()
+        let path = Path::new(&pwd);
+        let name = path
+            .file_name()
+            .unwrap_or_else(|| std::ffi::OsStr::new("/"));
+        name.to_str()?.to_string()
     } else {
         "~".to_string()
     });
